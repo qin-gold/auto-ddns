@@ -1,0 +1,32 @@
+version: '3'
+services:
+  auto-ddns:
+    image: auto-ddns:1.0.0
+    container_name: auto-ddns
+    restart: always
+    environment:
+      # 基础配置
+      - TZ=Asia/Shanghai
+      - DDNS_PROVIDER=tencent
+      - DDNS_ACCESS_KEY=your_access_key
+      - DDNS_SECRET_KEY=your_secret_key
+      - DDNS_DOMAIN=example.com
+      - DDNS_SUB_DOMAIN=home
+      - DDNS_UPDATE_INTERVAL=300000
+      
+      # 邮件通知配置
+      - EMAIL_ENABLED=true
+      - EMAIL_HOST=smtp.qq.com
+      - EMAIL_PORT=465
+      - EMAIL_USERNAME=your_qq@qq.com
+      - EMAIL_PASSWORD=your_smtp_password
+      - EMAIL_FROM=your_qq@qq.com
+      - EMAIL_TO=notify_to@example.com
+    volumes:
+      - /opt/auto-ddns/config:/app/config
+      - /opt/auto-ddns/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

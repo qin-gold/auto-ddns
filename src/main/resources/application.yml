@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: auto-ddns
+  mail:
+    host: ${EMAIL_HOST:smtp.qq.com}
+    port: ${EMAIL_PORT:465}
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+
+# DDNS Configuration
+ddns:
+  provider: ${DDNS_PROVIDER:tencent}
+  access-key: ${DDNS_ACCESS_KEY:}
+  secret-key: ${DDNS_SECRET_KEY:}
+  domain: ${DDNS_DOMAIN:}
+  sub-domain: ${DDNS_SUB_DOMAIN:}
+  update-interval: ${DDNS_UPDATE_INTERVAL:300000}
+
+# Email Configuration
+email:
+  enabled: ${EMAIL_ENABLED:false}
+  host: ${EMAIL_HOST:smtp.qq.com}
+  port: ${EMAIL_PORT:465}
+  username: ${EMAIL_USERNAME:}
+  password: ${EMAIL_PASSWORD:}
+  from: ${EMAIL_FROM:}
+  to: ${EMAIL_TO:}
