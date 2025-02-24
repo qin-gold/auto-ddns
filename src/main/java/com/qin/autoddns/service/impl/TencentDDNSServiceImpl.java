@@ -44,7 +44,7 @@ public class TencentDDNSServiceImpl implements DDNSService {
                 request.setValue(value);
                 request.setSubDomain(subDomain);
 
-                ModifyRecordResponse response = client.ModifyRecord(request);
+                 client.ModifyRecord(request);
             } else {
                 // 创建新记录
                 CreateRecordRequest request = new CreateRecordRequest();
