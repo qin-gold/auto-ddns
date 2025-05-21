@@ -5,11 +5,17 @@
 ## 功能特点
 
 - 自动检测并更新域名解析记录
-- 支持多个DNS服务提供商（目前支持腾讯云，计划支持阿里云）
+- 支持多个DNS服务提供商
+  - 腾讯云 DNS
+  - 阿里云 DNS
+  - Cloudflare DNS
 - 可配置的更新时间间隔
 - 多个IP地址查询服务源，保证可用性
 - 详细的日志记录
 - 基于工厂模式的可扩展设计
+- 支持邮件通知（可选）
+- 支持 Docker 部署
+- 支持多配置切换
 
 ## 系统要求
 
@@ -141,8 +147,16 @@ sudo systemctl status auto-ddns
 - 支持自动创建和更新DNS记录
 - 支持A记录类型
 
-### 阿里云DNS（计划支持）
-- 开发中...
+### 阿里云DNS
+- 需要在阿里云控制台获取 AccessKey ID 和 AccessKey Secret
+- 支持自动创建和更新DNS记录
+- 支持A记录类型
+
+### Cloudflare DNS
+- 需要在 Cloudflare 控制台获取 API Token
+- 需要提供 Zone ID（在域名概述页面右侧的 API 部分）
+- 支持自动创建和更新DNS记录
+- 支持A记录类型
 
 ## 配置说明
 
@@ -150,9 +164,10 @@ sudo systemctl status auto-ddns
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| provider | DNS服务提供商（tencent/aliyun） | 无 |
+| provider | DNS服务提供商（tencent/aliyun/cloudflare） | cloudflare |
 | access-key | 访问密钥 | 无 |
 | secret-key | 密钥 | 无 |
+| zone-id | Cloudflare Zone ID | 无 |
 | domain | 主域名 | 无 |
 | sub-domain | 子域名 | 无 |
 | update-interval | 更新间隔（毫秒） | 300000 |
@@ -191,6 +206,16 @@ email:
   password: your_smtp_password  # 163邮箱授权码
   from: your_mail@163.com
   to: notify_to@example.com
+```
+
+### Cloudflare 配置示例
+```yaml
+ddns:
+  provider: cloudflare
+  access-key: ${DDNS_ACCESS_KEY:your_cloudflare_api_token}
+  zone-id: ${DDNS_ZONE_ID:your_domain_zone_id}
+  domain: ${DDNS_DOMAIN:your_domain}
+  sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}
 ```
 
 ### 通知说明
@@ -342,13 +367,37 @@ services:
     container_name: auto-ddns
     restart: always
     environment:
+      # 基础配置
       - TZ=Asia/Shanghai
-      - DDNS_PROVIDER=tencent
-      - DDNS_ACCESS_KEY=your_access_key
-      - DDNS_SECRET_KEY=your_secret_key
+      - SPRING_PROFILES_ACTIVE=cloudflare  # 选择激活的配置：tencent/cloudflare/aliyun
+      - DDNS_UPDATE_INTERVAL=300000
+      
+      # 腾讯云配置
+      # - DDNS_ACCESS_KEY=your_access_key
+      # - DDNS_SECRET_KEY=your_secret_key
+      # - DDNS_DOMAIN=example.com
+      # - DDNS_SUB_DOMAIN=home
+      
+      # Cloudflare配置
+      - DDNS_ACCESS_KEY=your_cloudflare_api_token
+      - DDNS_ZONE_ID=your_zone_id
       - DDNS_DOMAIN=example.com
       - DDNS_SUB_DOMAIN=home
-      - DDNS_UPDATE_INTERVAL=300000
+      
+      # 阿里云配置
+      # - DDNS_ACCESS_KEY=your_aliyun_access_key
+      # - DDNS_SECRET_KEY=your_aliyun_secret_key
+      # - DDNS_DOMAIN=example.com
+      # - DDNS_SUB_DOMAIN=home
+      
+      # 邮件通知配置（可选）
+      - EMAIL_ENABLED=true
+      - EMAIL_HOST=smtp.qq.com
+      - EMAIL_PORT=465
+      - EMAIL_USERNAME=your_qq@qq.com
+      - EMAIL_PASSWORD=your_smtp_password
+      - EMAIL_FROM=your_qq@qq.com
+      - EMAIL_TO=notify_to@example.com
     volumes:
       - /opt/auto-ddns/config:/app/config
       - /opt/auto-ddns/logs:/app/logs
@@ -435,3 +484,31 @@ docker run -d --name auto-ddns --restart always [环境变量参数] your-regist
    # 构建多架构镜像
    docker buildx build --platform linux/amd64,linux/arm64 -t auto-ddns:1.0.0 .
    ```
+
+## 验证
+
+应用启动后，会在日志中打印当前配置信息：
+
+```
+==========================================
+DDNS服务启动配置信息：
+------------------------------------------
+当前激活的配置: cloudflare
+DNS服务提供商: cloudflare
+域名: home.example.com
+更新间隔: 300000 毫秒
+------------------------------------------
+邮件通知功能: 已启用
+SMTP服务器: smtp.qq.com:465
+发件人: your_qq@qq.com
+收件人: notify_to@example.com
+==========================================
+```
+
+## 注意事项
+
+1. 确保配置的域名已经在相应的 DNS 服务商处正确设置
+2. Cloudflare 用户需要提供 Zone ID，可以在域名概述页面找到
+3. 如果启用邮件通知，请确保 SMTP 配置正确
+4. 建议使用环境变量或配置文件来管理敏感信息
+5. 定期检查日志，确保服务正常运行
