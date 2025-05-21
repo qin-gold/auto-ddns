@@ -4,6 +4,8 @@ services:
     image: auto-ddns:1.0.0
     container_name: auto-ddns
     restart: always
+   # env_file:
+   #   - .env.example
     environment:
       # 基础配置
       - TZ=Asia/Shanghai

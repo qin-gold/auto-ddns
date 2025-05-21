@@ -314,7 +314,7 @@ public class NewProviderDDNSServiceImpl implements DDNSService {
 
 ### 1. 构建镜像
 
-```shell
+```bash
 # 先编译打包
 mvn clean package
 
@@ -322,7 +322,49 @@ mvn clean package
 docker build -t auto-ddns:1.0.0 .
 ```
 
-### 2. 运行容器
+### 2. 导出镜像
+
+#### 2.1 导出为 tar 文件
+
+```bash
+# 导出镜像到文件
+docker save -o auto-ddns-1.0.0.tar auto-ddns:1.0.0
+
+# 在目标机器上加载镜像
+docker load -i auto-ddns-1.0.0.tar
+```
+
+#### 2.2 推送到镜像仓库
+
+```bash
+# 标记镜像（替换 your-registry.com 为你的镜像仓库地址）
+docker tag auto-ddns:1.0.0 your-registry.com/auto-ddns:1.0.0
+
+# 登录到镜像仓库
+docker login your-registry.com
+
+# 推送镜像
+docker push your-registry.com/auto-ddns:1.0.0
+
+# 在目标机器上拉取镜像
+docker pull your-registry.com/auto-ddns:1.0.0
+```
+
+#### 2.3 多架构镜像导出
+
+```bash
+# 构建多架构镜像
+docker buildx build --platform linux/amd64,linux/arm64 -t auto-ddns:1.0.0 .
+
+# 导出多架构镜像
+docker buildx build --platform linux/amd64,linux/arm64 -t auto-ddns:1.0.0 --output type=local,dest=./images .
+
+# 在目标机器上加载镜像
+docker load -i ./images/linux_amd64/auto-ddns-1.0.0.tar
+docker load -i ./images/linux_arm64/auto-ddns-1.0.0.tar
+```
+
+### 3. 运行容器
 
 基础运行方式：
 ```shell
@@ -357,7 +399,36 @@ docker run -d \
 
 ### 3. 使用Docker Compose
 
-创建 `docker-compose.yml` 文件：
+#### 3.1 使用环境变量文件
+
+1. 创建 `.env` 文件：
+
+```bash
+# 创建 .env 文件
+cat > .env << EOF
+# 基础配置
+TZ=Asia/Shanghai
+SPRING_PROFILES_ACTIVE=cloudflare
+DDNS_UPDATE_INTERVAL=300000
+
+# Cloudflare配置
+DDNS_ACCESS_KEY=your_cloudflare_api_token
+DDNS_ZONE_ID=your_zone_id
+DDNS_DOMAIN=example.com
+DDNS_SUB_DOMAIN=home
+
+# 邮件通知配置
+EMAIL_ENABLED=true
+EMAIL_HOST=smtp.qq.com
+EMAIL_PORT=465
+EMAIL_USERNAME=your_qq@qq.com
+EMAIL_PASSWORD=your_smtp_password
+EMAIL_FROM=your_qq@qq.com
+EMAIL_TO=notify_to@example.com
+EOF
+```
+
+2. 修改 `docker-compose.yml` 文件，使用环境变量：
 
 ```yaml
 version: '3'
@@ -366,38 +437,8 @@ services:
     image: auto-ddns:1.0.0
     container_name: auto-ddns
     restart: always
-    environment:
-      # 基础配置
-      - TZ=Asia/Shanghai
-      - SPRING_PROFILES_ACTIVE=cloudflare  # 选择激活的配置：tencent/cloudflare/aliyun
-      - DDNS_UPDATE_INTERVAL=300000
-      
-      # 腾讯云配置
-      # - DDNS_ACCESS_KEY=your_access_key
-      # - DDNS_SECRET_KEY=your_secret_key
-      # - DDNS_DOMAIN=example.com
-      # - DDNS_SUB_DOMAIN=home
-      
-      # Cloudflare配置
-      - DDNS_ACCESS_KEY=your_cloudflare_api_token
-      - DDNS_ZONE_ID=your_zone_id
-      - DDNS_DOMAIN=example.com
-      - DDNS_SUB_DOMAIN=home
-      
-      # 阿里云配置
-      # - DDNS_ACCESS_KEY=your_aliyun_access_key
-      # - DDNS_SECRET_KEY=your_aliyun_secret_key
-      # - DDNS_DOMAIN=example.com
-      # - DDNS_SUB_DOMAIN=home
-      
-      # 邮件通知配置（可选）
-      - EMAIL_ENABLED=true
-      - EMAIL_HOST=smtp.qq.com
-      - EMAIL_PORT=465
-      - EMAIL_USERNAME=your_qq@qq.com
-      - EMAIL_PASSWORD=your_smtp_password
-      - EMAIL_FROM=your_qq@qq.com
-      - EMAIL_TO=notify_to@example.com
+    env_file:
+      - .env
     volumes:
       - /opt/auto-ddns/config:/app/config
       - /opt/auto-ddns/logs:/app/logs
@@ -408,82 +449,92 @@ services:
       retries: 3
 ```
 
-运行：
-```shell
+3. 启动服务：
+
+```bash
+# 使用环境变量文件启动
+docker-compose up -d
+
+# 查看环境变量是否正确加载
+docker-compose exec auto-ddns env
+```
+
+#### 3.2 使用系统环境变量
+
+1. 在系统中设置环境变量：
+
+```bash
+# Linux/macOS
+export SPRING_PROFILES_ACTIVE=cloudflare
+export DDNS_ACCESS_KEY=your_cloudflare_api_token
+export DDNS_ZONE_ID=your_zone_id
+export DDNS_DOMAIN=example.com
+export DDNS_SUB_DOMAIN=home
+
+# Windows PowerShell
+$env:SPRING_PROFILES_ACTIVE="cloudflare"
+$env:DDNS_ACCESS_KEY="your_cloudflare_api_token"
+$env:DDNS_ZONE_ID="your_zone_id"
+$env:DDNS_DOMAIN="example.com"
+$env:DDNS_SUB_DOMAIN="home"
+```
+
+2. 修改 `docker-compose.yml` 文件，使用系统环境变量：
+
+```yaml
+version: '3'
+services:
+  auto-ddns:
+    image: auto-ddns:1.0.0
+    container_name: auto-ddns
+    restart: always
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-cloudflare}
+      - DDNS_UPDATE_INTERVAL=${DDNS_UPDATE_INTERVAL:-300000}
+      - DDNS_ACCESS_KEY=${DDNS_ACCESS_KEY}
+      - DDNS_ZONE_ID=${DDNS_ZONE_ID}
+      - DDNS_DOMAIN=${DDNS_DOMAIN}
+      - DDNS_SUB_DOMAIN=${DDNS_SUB_DOMAIN}
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.qq.com}
+      - EMAIL_PORT=${EMAIL_PORT:-465}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_TO=${EMAIL_TO}
+    volumes:
+      - /opt/auto-ddns/config:/app/config
+      - /opt/auto-ddns/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+3. 启动服务：
+
+```bash
+# 使用系统环境变量启动
 docker-compose up -d
 ```
 
-### 4. 推送到远程服务器
+#### 3.3 环境变量优先级
 
-```shell
-# 标记镜像
-docker tag auto-ddns:1.0.0 your-registry.com/auto-ddns:1.0.0
+Docker Compose 中环境变量的优先级从高到低：
 
-# 推送镜像
-docker push your-registry.com/auto-ddns:1.0.0
+1. `docker-compose run -e` 命令行参数
+2. `docker-compose.yml` 文件中的 `environment` 配置
+3. `docker-compose.yml` 文件中的 `env_file` 配置
+4. 系统环境变量
 
-# 在远程服务器拉取和运行
-docker pull your-registry.com/auto-ddns:1.0.0
-docker run -d --name auto-ddns --restart always [环境变量参数] your-registry.com/auto-ddns:1.0.0
-```
+#### 3.4 安全建议
 
-### 5. Docker部署注意事项
-
-1. 环境变量配置
-   - 可以使用环境变量文件：
-     ```shell
-     docker run --env-file=.env -d auto-ddns:1.0.0
-     ```
-   - .env文件示例：
-     ```
-     DDNS_PROVIDER=tencent
-     DDNS_ACCESS_KEY=your_key
-     DDNS_SECRET_KEY=your_secret
-     ```
-
-2. 持久化
-   - 配置文件: `/app/config`
-   - 日志文件: `/app/logs`
-   ```shell
-   docker run -v /opt/auto-ddns/config:/app/config -v /opt/auto-ddns/logs:/app/logs -d auto-ddns:1.0.0
-   ```
-
-3. 健康检查
-   - 容器内置健康检查接口：`/health`
-   - 可以通过Docker命令查看状态：
-     ```shell
-     docker inspect --format='{{.State.Health.Status}}' auto-ddns
-     ```
-
-4. 日志查看
-   ```shell
-   # 查看容器日志
-   docker logs auto-ddns
-   
-   # 实时查看日志
-   docker logs -f auto-ddns
-   ```
-
-5. 容器管理
-   ```shell
-   # 停止容器
-   docker stop auto-ddns
-   
-   # 启动容器
-   docker start auto-ddns
-   
-   # 重启容器
-   docker restart auto-ddns
-   
-   # 删除容器
-   docker rm -f auto-ddns
-   ```
-
-6. 多架构支持
-   ```shell
-   # 构建多架构镜像
-   docker buildx build --platform linux/amd64,linux/arm64 -t auto-ddns:1.0.0 .
-   ```
+1. 不要将包含敏感信息的 `.env` 文件提交到版本控制系统
+2. 在生产环境中使用安全的密钥管理服务
+3. 定期轮换密钥和密码
+4. 使用最小权限原则配置 API 密钥
 
 ## 验证
 
