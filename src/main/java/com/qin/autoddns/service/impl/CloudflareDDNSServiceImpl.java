@@ -23,7 +23,6 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
     private final DDNSConfig config;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private String zoneId;
     private String recordId;
 
     public CloudflareDDNSServiceImpl(DDNSConfig config) {
@@ -33,7 +32,6 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
 
         try {
             validateConfig();
-            initializeZoneId();
             log.info("Cloudflare DNS服务初始化成功");
         } catch (Exception e) {
             log.error("Cloudflare DNS服务初始化失败: {}", e.getMessage());
@@ -45,33 +43,12 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
         if (config.getAccessKey() == null || config.getAccessKey().trim().isEmpty()) {
             throw new IllegalArgumentException("Cloudflare API Token 不能为空");
         }
-        log.info("API Token长度: {}", config.getAccessKey().length());
-    }
-
-    private void initializeZoneId() {
-        try {
-            HttpHeaders headers = createHeaders();
-            String url = "https://api.cloudflare.com/client/v4/zones?name=" + config.getDomain();
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
-
-            JsonNode root = objectMapper.readTree(response.getBody());
-            if (root.get("success").asBoolean()) {
-                JsonNode zones = root.get("result");
-                if (zones.isArray() && !zones.isEmpty()) {
-                    this.zoneId = zones.get(0).get("id").asText();
-                    log.info("成功获取Zone ID: {}", zoneId);
-                } else {
-                    throw new RuntimeException("未找到域名对应的Zone");
-                }
-            } else {
-                throw new RuntimeException("获取Zone ID失败: " + root.get("errors").toString());
-            }
-        } catch (Exception e) {
-            log.error("初始化Zone ID失败: {}", e.getMessage());
-            throw new RuntimeException("初始化Zone ID失败", e);
+        if (config.getZoneId() == null || config.getZoneId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Cloudflare Zone ID 不能为空");
         }
+        log.info("API Token长度: {}, Zone ID: {}",
+                config.getAccessKey().length(),
+                config.getZoneId());
     }
 
     private HttpHeaders createHeaders() {
@@ -105,15 +82,15 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
     private boolean updateExistingRecord(String domain, String subDomain, String recordType, String value) {
         try {
             String url = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s",
-                    zoneId, recordId);
+                    config.getZoneId(), recordId);
 
             String requestBody = String.format("""
                     {
                         "type": "%s",
                         "name": "%s",
                         "content": "%s",
-                        "ttl": 1,
-                        "proxied": false
+                        "ttl": 3600,
+                        "proxied": true
                     }
                     """, recordType, subDomain + "." + domain, value);
 
@@ -139,15 +116,16 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
 
     private boolean createNewRecord(String domain, String subDomain, String recordType, String value) {
         try {
-            String url = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records", zoneId);
+            String url = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records",
+                    config.getZoneId());
 
             String requestBody = String.format("""
                     {
                         "type": "%s",
                         "name": "%s",
                         "content": "%s",
-                        "ttl": 1,
-                        "proxied": false
+                        "ttl": 3600,
+                        "proxied": true
                     }
                     """, recordType, subDomain + "." + domain, value);
 
@@ -178,7 +156,7 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
             log.debug("获取当前记录: domain={}, subDomain={}", domain, subDomain);
 
             String url = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records?name=%s.%s",
-                    zoneId, subDomain, domain);
+                    config.getZoneId(), subDomain, domain);
 
             HttpHeaders headers = createHeaders();
             ResponseEntity<String> response = restTemplate.exchange(
@@ -204,7 +182,7 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
     private String getRecordId(String domain, String subDomain) {
         try {
             String url = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records?name=%s.%s",
-                    zoneId, subDomain, domain);
+                    config.getZoneId(), subDomain, domain);
 
             HttpHeaders headers = createHeaders();
             ResponseEntity<String> response = restTemplate.exchange(

@@ -15,6 +15,7 @@ public class DDNSConfig {
     private String provider;
     private String accessKey;
     private String secretKey;
+    private String zoneId;
     private String domain;
     private String subDomain;
     private long updateInterval = 300000; // 默认5分钟
@@ -42,6 +43,14 @@ public class DDNSConfig {
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 
     public String getDomain() {

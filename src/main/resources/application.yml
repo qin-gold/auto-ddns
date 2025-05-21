@@ -10,6 +10,8 @@ spring:
     port: ${EMAIL_PORT:465}
     username: ${EMAIL_USERNAME:}
     password: ${EMAIL_PASSWORD:}
+    from: ${EMAIL_FROM:}
+    to: ${EMAIL_TO:}
     properties:
       mail:
         smtp:
@@ -44,6 +46,7 @@ spring:
 ddns:
   provider: cloudflare
   access-key: ${DDNS_ACCESS_KEY:your_cloudflare_api_token}
+  zone-id: ${DDNS_ZONE_ID:your_domain_zone_id}
   domain: ${DDNS_DOMAIN:your_domian}
   sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}
 

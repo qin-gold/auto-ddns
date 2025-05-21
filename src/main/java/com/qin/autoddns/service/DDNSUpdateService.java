@@ -54,7 +54,7 @@ public class DDNSUpdateService {
                     log.info("DNS记录更新成功:");
                     log.info("域名: {}", fullDomain);
                     log.info("新IP: {}", currentIp);
-                    log.info("原IP: {}", currentRecord != null ? currentRecord : "无记录");
+                    log.info("原IP: {}", currentRecord != null ? currentRecord : "无历史记录");
                     emailService.sendDNSUpdateNotification(true, fullDomain, currentRecord, currentIp, null);
                 } else {
                     log.error("DNS记录更新失败:");
