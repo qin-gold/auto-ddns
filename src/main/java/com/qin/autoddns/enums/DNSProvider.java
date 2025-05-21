@@ -8,7 +8,8 @@ package com.qin.autoddns.enums;
  */
 public enum DNSProvider {
     TENCENT("tencent", "腾讯云"),
-    ALIYUN("aliyun", "阿里云");
+    ALIYUN("aliyun", "阿里云"),
+    CLOUDFLARE("cloudflare", "Cloudflare");
 
     private final String code;
     private final String desc;

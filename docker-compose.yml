@@ -7,12 +7,25 @@ services:
     environment:
       # 基础配置
       - TZ=Asia/Shanghai
-      - DDNS_PROVIDER=tencent
+      - SPRING_PROFILES_ACTIVE=cloudflare  # 选择激活的配置：tencent/cloudflare/aliyun
+      - DDNS_UPDATE_INTERVAL=300000
+      
+      # 腾讯云配置
       - DDNS_ACCESS_KEY=your_access_key
       - DDNS_SECRET_KEY=your_secret_key
       - DDNS_DOMAIN=example.com
       - DDNS_SUB_DOMAIN=home
-      - DDNS_UPDATE_INTERVAL=300000
+      
+      # Cloudflare配置
+      # - DDNS_ACCESS_KEY=your_cloudflare_api_token
+      # - DDNS_DOMAIN=example.com
+      # - DDNS_SUB_DOMAIN=home
+      
+      # 阿里云配置
+      # - DDNS_ACCESS_KEY=your_aliyun_access_key
+      # - DDNS_SECRET_KEY=your_aliyun_secret_key
+      # - DDNS_DOMAIN=example.com
+      # - DDNS_SUB_DOMAIN=home
       
       # 邮件通知配置
       - EMAIL_ENABLED=true

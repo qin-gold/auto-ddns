@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 2024/03/21
  */
 @Configuration
-@ConfigurationProperties(prefix = "email")
+@ConfigurationProperties(prefix = "spring.mail")
 public class EmailConfig {
     private boolean enabled = false;
     private String host;

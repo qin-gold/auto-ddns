@@ -20,11 +20,11 @@ import java.util.regex.Pattern;
  */
 public class IPAddressUtil {
     private static final Logger logger = LoggerFactory.getLogger(IPAddressUtil.class);
-    
+
     // IP地址验证正则表达式
     private static final Pattern IP_PATTERN = Pattern.compile(
             "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$");
-    
+
     // 连接超时时间（毫秒）
     private static final int CONNECT_TIMEOUT = 5000;
     // 读取超时时间（毫秒）
@@ -80,7 +80,7 @@ public class IPAddressUtil {
             connection = (HttpURLConnection) new URI(service).toURL().openConnection();
             connection.setConnectTimeout(CONNECT_TIMEOUT);
             connection.setReadTimeout(READ_TIMEOUT);
-            
+
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                 String ip = reader.readLine();
                 if (StringUtils.hasText(ip)) {

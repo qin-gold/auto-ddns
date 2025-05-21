@@ -1,7 +1,11 @@
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:cloudflare}
   application:
     name: auto-ddns
+  # 邮件配置
   mail:
+    enabled: ${EMAIL_ENABLED:false}
     host: ${EMAIL_HOST:smtp.qq.com}
     port: ${EMAIL_PORT:465}
     username: ${EMAIL_USERNAME:}
@@ -13,21 +17,45 @@ spring:
           ssl:
             enable: true
 
-# DDNS Configuration
+# 默认配置
 ddns:
-  provider: ${DDNS_PROVIDER:tencent}
-  access-key: ${DDNS_ACCESS_KEY:}
-  secret-key: ${DDNS_SECRET_KEY:}
-  domain: ${DDNS_DOMAIN:}
-  sub-domain: ${DDNS_SUB_DOMAIN:}
+  provider: ${DDNS_PROVIDER:cloudflare}
   update-interval: ${DDNS_UPDATE_INTERVAL:300000}
 
-# Email Configuration
-email:
-  enabled: ${EMAIL_ENABLED:false}
-  host: ${EMAIL_HOST:smtp.qq.com}
-  port: ${EMAIL_PORT:465}
-  username: ${EMAIL_USERNAME:}
-  password: ${EMAIL_PASSWORD:}
-  from: ${EMAIL_FROM:}
-  to: ${EMAIL_TO:}
+# 腾讯云配置
+---
+spring:
+  config:
+    activate:
+      on-profile: tencent
+ddns:
+  provider: tencent
+  access-key: ${DDNS_ACCESS_KEY:your_tencent_access_key}
+  secret-key: ${DDNS_SECRET_KEY:your_tencent_secret_key}
+  domain: ${DDNS_DOMAIN:your_domian}
+  sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}
+
+# Cloudflare配置
+---
+spring:
+  config:
+    activate:
+      on-profile: cloudflare
+ddns:
+  provider: cloudflare
+  access-key: ${DDNS_ACCESS_KEY:your_cloudflare_api_token}
+  domain: ${DDNS_DOMAIN:your_domian}
+  sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}
+
+# 阿里云配置
+---
+spring:
+  config:
+    activate:
+      on-profile: aliyun
+ddns:
+  provider: aliyun
+  access-key: ${DDNS_ACCESS_KEY:your_aliyun_access_key}
+  secret-key: ${DDNS_SECRET_KEY:your_aliyun_secret_key}
+  domain: ${DDNS_DOMAIN:your_domian}
+  sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}

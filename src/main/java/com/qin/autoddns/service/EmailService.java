@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailService {
     private final Logger log = LoggerFactory.getLogger(EmailService.class);
-    
+
     private final EmailConfig emailConfig;
     private final JavaMailSender mailSender;
 
@@ -28,10 +28,10 @@ public class EmailService {
     /**
      * 发送DNS更新结果通知
      *
-     * @param success 是否成功
-     * @param domain 域名
-     * @param oldIp 原IP
-     * @param newIp 新IP
+     * @param success  是否成功
+     * @param domain   域名
+     * @param oldIp    原IP
+     * @param newIp    新IP
      * @param errorMsg 错误信息（如果有）
      */
     public void sendDNSUpdateNotification(boolean success, String domain, String oldIp, String newIp, String errorMsg) {
@@ -43,31 +43,31 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(emailConfig.getFrom());
             message.setTo(emailConfig.getTo());
-            
+
             if (success) {
                 message.setSubject("DDNS更新成功通知 - " + domain);
                 message.setText(String.format("""
-                    DDNS记录更新成功！
-                    
-                    域名: %s
-                    原IP: %s
-                    新IP: %s
-                    
-                    此邮件为自动发送，请勿回复。
-                    """, domain, oldIp, newIp));
+                        DDNS记录更新成功！
+                        
+                        域名: %s
+                        原IP: %s
+                        新IP: %s
+                        
+                        此邮件为自动发送，请勿回复。
+                        """, domain, oldIp, newIp));
             } else {
                 message.setSubject("DDNS更新失败警告 - " + domain);
                 message.setText(String.format("""
-                    DDNS记录更新失败！
-                    
-                    域名: %s
-                    当前IP: %s
-                    目标IP: %s
-                    错误信息: %s
-                    
-                    请检查系统日志获取详细信息。
-                    此邮件为自动发送，请勿回复。
-                    """, domain, oldIp, newIp, errorMsg));
+                        DDNS记录更新失败！
+                        
+                        域名: %s
+                        当前IP: %s
+                        目标IP: %s
+                        错误信息: %s
+                        
+                        请检查系统日志获取详细信息。
+                        此邮件为自动发送，请勿回复。
+                        """, domain, oldIp, newIp, errorMsg));
             }
 
             mailSender.send(message);

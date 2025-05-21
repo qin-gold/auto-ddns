@@ -8,6 +8,7 @@ import com.tencentcloudapi.dnspod.v20210323.DnspodClient;
 import com.tencentcloudapi.dnspod.v20210323.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 /**
@@ -20,26 +21,38 @@ import org.springframework.stereotype.Service;
 public class TencentDDNSServiceImpl implements DDNSService {
 
     private final Logger log = LoggerFactory.getLogger(TencentDDNSServiceImpl.class);
-    private final DnspodClient client;
+    private DnspodClient client;
     private final DDNSConfig config;
+    private final Environment environment;
 
-    public TencentDDNSServiceImpl(DDNSConfig config) {
+    public TencentDDNSServiceImpl(DDNSConfig config, Environment environment) {
         this.config = config;
-        try {
-            // 验证配置
-            validateConfig();
-            
-            // 初始化客户端
-            Credential cred = new Credential(config.getAccessKey(), config.getSecretKey());
-            this.client = new DnspodClient(cred, "ap-guangzhou");
-            
-            // 测试连接
-            testConnection();
-            
-            log.info("腾讯云DNS服务初始化成功");
-        } catch (Exception e) {
-            log.error("腾讯云DNS服务初始化失败: {}", e.getMessage());
-            throw new RuntimeException("DNS服务初始化失败", e);
+        this.environment = environment;
+
+        // 检查是否激活了腾讯云配置
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean isTencentProfileActive = activeProfiles.length == 0 ||
+                environment.getProperty("ddns.provider", String.class, "").equals("tencent");
+
+        if (isTencentProfileActive) {
+            try {
+                // 验证配置
+                validateConfig();
+
+                // 初始化客户端
+                Credential cred = new Credential(config.getAccessKey(), config.getSecretKey());
+                this.client = new DnspodClient(cred, "ap-guangzhou");
+
+                // 测试连接
+                testConnection();
+
+                log.info("腾讯云DNS服务初始化成功");
+            } catch (Exception e) {
+                log.error("腾讯云DNS服务初始化失败: {}", e.getMessage());
+                throw new RuntimeException("DNS服务初始化失败", e);
+            }
+        } else {
+            log.info("腾讯云DNS服务未激活，跳过初始化");
         }
     }
 
@@ -50,8 +63,8 @@ public class TencentDDNSServiceImpl implements DDNSService {
         if (config.getSecretKey() == null || config.getSecretKey().trim().isEmpty()) {
             throw new IllegalArgumentException("SecretKey 不能为空");
         }
-        log.info("AccessKey: {}, SecretKey长度: {}", 
-                maskAccessKey(config.getAccessKey()), 
+        log.info("AccessKey: {}, SecretKey长度: {}",
+                maskAccessKey(config.getAccessKey()),
                 config.getSecretKey().length());
     }
 
@@ -76,10 +89,15 @@ public class TencentDDNSServiceImpl implements DDNSService {
 
     @Override
     public boolean updateDNSRecord(String domain, String subDomain, String recordType, String value) {
+        if (client == null) {
+            log.warn("腾讯云DNS服务未初始化，无法更新记录");
+            return false;
+        }
+
         try {
-            log.info("开始更新DNS记录: domain={}, subDomain={}, type={}, value={}", 
+            log.info("开始更新DNS记录: domain={}, subDomain={}, type={}, value={}",
                     domain, subDomain, recordType, value);
-            
+
             String recordId = getRecordId(domain, subDomain);
             if (recordId != null) {
                 return updateExistingRecord(domain, subDomain, recordType, value, recordId);
@@ -92,8 +110,8 @@ public class TencentDDNSServiceImpl implements DDNSService {
         }
     }
 
-    private boolean updateExistingRecord(String domain, String subDomain, String recordType, 
-                                       String value, String recordId) throws TencentCloudSDKException {
+    private boolean updateExistingRecord(String domain, String subDomain, String recordType,
+                                         String value, String recordId) throws TencentCloudSDKException {
         log.info("更新已存在的记录: recordId={}", recordId);
         ModifyRecordRequest request = new ModifyRecordRequest();
         request.setDomain(domain);
@@ -108,8 +126,8 @@ public class TencentDDNSServiceImpl implements DDNSService {
         return true;
     }
 
-    private boolean createNewRecord(String domain, String subDomain, String recordType, 
-                                  String value) throws TencentCloudSDKException {
+    private boolean createNewRecord(String domain, String subDomain, String recordType,
+                                    String value) throws TencentCloudSDKException {
         log.info("创建新记录");
         CreateRecordRequest request = new CreateRecordRequest();
         request.setDomain(domain);
@@ -125,6 +143,11 @@ public class TencentDDNSServiceImpl implements DDNSService {
 
     @Override
     public String getCurrentRecord(String domain, String subDomain) {
+        if (client == null) {
+            log.warn("腾讯云DNS服务未初始化，无法获取记录");
+            return null;
+        }
+
         try {
             log.debug("获取当前记录: domain={}, subDomain={}", domain, subDomain);
             DescribeRecordListRequest request = new DescribeRecordListRequest();
