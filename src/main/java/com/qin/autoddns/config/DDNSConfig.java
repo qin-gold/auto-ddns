@@ -19,6 +19,7 @@ public class DDNSConfig {
     private String domain;
     private String subDomain;
     private long updateInterval = 300000; // 默认5分钟
+    private boolean proxied = false; // 默认开启代理
 
     // Getters and Setters
     public String getProvider() {
@@ -75,5 +76,13 @@ public class DDNSConfig {
 
     public void setUpdateInterval(long updateInterval) {
         this.updateInterval = updateInterval;
+    }
+
+    public boolean isProxied() {
+        return proxied;
+    }
+
+    public void setProxied(boolean proxied) {
+        this.proxied = proxied;
     }
 } 

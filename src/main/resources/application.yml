@@ -49,6 +49,7 @@ ddns:
   zone-id: ${DDNS_ZONE_ID:your_domain_zone_id}
   domain: ${DDNS_DOMAIN:your_domian}
   sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}
+  proxied: ${DDNS_PROXIED:false}
 
 # 阿里云配置
 ---

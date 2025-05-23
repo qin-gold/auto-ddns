@@ -23,6 +23,7 @@ services:
       - DDNS_ZONE_ID=your_zone_id  # 新增配置
       - DDNS_DOMAIN=example.com
       - DDNS_SUB_DOMAIN=home
+      - DDNS_PROXIED=true  # 是否开启代理，默认为true
       
       # 阿里云配置
       # - DDNS_ACCESS_KEY=your_aliyun_access_key

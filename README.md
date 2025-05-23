@@ -16,6 +16,7 @@
 - 支持邮件通知（可选）
 - 支持 Docker 部署
 - 支持多配置切换
+- Cloudflare 代理功能可配置
 
 ## 系统要求
 
@@ -35,12 +36,13 @@ spring:
     
 #DDNS Configuration
 ddns:
-  provider: tencent # DNS服务提供商：tencent/aliyun
+  provider: tencent # DNS服务提供商：tencent/aliyun/cloudflare
   access-key: your_key # 访问密钥
   secret-key: your_secret # 密钥
   domain: example.com # 主域名
   sub-domain: home # 子域名
   update-interval: 300000 # 更新间隔（毫秒），默认5分钟
+  proxied: true # Cloudflare代理功能，仅Cloudflare有效
 ```
 
 ### 2. 编译打包
@@ -157,6 +159,9 @@ sudo systemctl status auto-ddns
 - 需要提供 Zone ID（在域名概述页面右侧的 API 部分）
 - 支持自动创建和更新DNS记录
 - 支持A记录类型
+- 支持代理功能配置（proxied）
+  - 开启代理：流量经过 Cloudflare CDN
+  - 关闭代理：直接访问源服务器
 
 ## 配置说明
 
@@ -171,6 +176,7 @@ sudo systemctl status auto-ddns
 | domain | 主域名 | 无 |
 | sub-domain | 子域名 | 无 |
 | update-interval | 更新间隔（毫秒） | 300000 |
+| proxied | Cloudflare代理功能 | false |
 
 ### 邮件通知配置
 
@@ -216,6 +222,7 @@ ddns:
   zone-id: ${DDNS_ZONE_ID:your_domain_zone_id}
   domain: ${DDNS_DOMAIN:your_domain}
   sub-domain: ${DDNS_SUB_DOMAIN:your_sub_domain}
+  proxied: ${DDNS_PROXIED:false}  # 是否开启代理功能
 ```
 
 ### 通知说明

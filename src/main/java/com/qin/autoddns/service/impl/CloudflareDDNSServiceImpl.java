@@ -90,9 +90,9 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
                         "name": "%s",
                         "content": "%s",
                         "ttl": 3600,
-                        "proxied": true
+                        "proxied": %b
                     }
-                    """, recordType, subDomain + "." + domain, value);
+                    """, recordType, subDomain + "." + domain, value, config.isProxied());
 
             HttpHeaders headers = createHeaders();
             HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
@@ -125,9 +125,9 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
                         "name": "%s",
                         "content": "%s",
                         "ttl": 3600,
-                        "proxied": true
+                        "proxied": %b
                     }
-                    """, recordType, subDomain + "." + domain, value);
+                    """, recordType, subDomain + "." + domain, value, config.isProxied());
 
             HttpHeaders headers = createHeaders();
             HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
