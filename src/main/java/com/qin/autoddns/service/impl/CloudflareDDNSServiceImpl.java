@@ -89,7 +89,7 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
                         "type": "%s",
                         "name": "%s",
                         "content": "%s",
-                        "ttl": 3600,
+                        "ttl": 300,
                         "proxied": %b
                     }
                     """, recordType, subDomain + "." + domain, value, config.isProxied());
@@ -124,7 +124,7 @@ public class CloudflareDDNSServiceImpl implements DDNSService {
                         "type": "%s",
                         "name": "%s",
                         "content": "%s",
-                        "ttl": 3600,
+                        "ttl": 300,
                         "proxied": %b
                     }
                     """, recordType, subDomain + "." + domain, value, config.isProxied());
